@@ -1,0 +1,143 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Parse_JSON": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@json(outputs('Create_Batches')?['body'])",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "?xml": {
+                                "type": "object",
+                                "properties": {
+                                    "@@version": {
+                                        "type": "string"
+                                    },
+                                    "@@encoding": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "root": {
+                                "type": "object",
+                                "properties": {
+                                    "batch": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "orders": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "order": {
+                                                                "type": "string"
+                                                            },
+                                                            "sku": {
+                                                                "type": "string"
+                                                            },
+                                                            "warehouse": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "order",
+                                                            "sku",
+                                                            "warehouse"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "orders"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Create_Batches": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Loop_through_batches": {
+                "type": "Foreach",
+                "foreach": "@body('Parse_JSON')?['root']?['batch']",
+                "actions": {
+                    "Send_Multiple_Messages": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                            "parameters": {
+                                "messages": "@body('Enrich')",
+                                "queueName": "outqueue4",
+                                "serviceBusName": "outqueue4"
+                            },
+                            "serviceProviderConfiguration": {
+                                "connectionName": "serviceBus",
+                                "operationId": "sendMessages",
+                                "serviceProviderId": "/serviceProviders/serviceBus"
+                            }
+                        },
+                        "runAfter": {
+                            "Enrich": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Enrich": {
+                        "type": "Workflow",
+                        "inputs": {
+                            "host": {
+                                "workflow": {
+                                    "id": "EnrichMessages"
+                                }
+                            },
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "body": "@items('Loop_through_batches')"
+                        },
+                        "runAfter": {}
+                    }
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "repetitions": 50
+                    }
+                }
+            },
+            "Create_Batches": {
+                "type": "Xslt",
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "map": {
+                        "name": "batch.xslt"
+                    }
+                },
+                "runAfter": {}
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {}
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}

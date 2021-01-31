@@ -1,0 +1,105 @@
+{
+  "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "actions": {
+          "For_each": {
+              "type": "Foreach",
+              "foreach": "@triggerBody()?['orders']",
+              "actions": {
+                  "Enrichment_Service": {
+                      "type": "Http",
+                      "inputs": {
+                          "method": "GET",
+                          "uri": "@{appsetting('enrichurl')}/@{items('For_each')?['warehouse']}",
+                          "headers": {
+                              "Ocp-Apim-Subscription-Key": "@appsetting('enrichurlkey')"
+                          }
+                      },
+                      "runAfter": {}
+                  },
+                  "Enrich_Message": {
+                      "type": "Compose",
+                      "inputs": {
+                          "order": "@items('For_each')?['order']",
+                          "sku": "@items('For_each')?['sku']",
+                          "warehouse": "@items('For_each')?['warehouse']",
+                          "newVal": "@body('Enrichment_Service')?.lookup"
+                      },
+                      "runAfter": {
+                          "Enrichment_Service": [
+                              "Succeeded"
+                          ]
+                      }
+                  }
+              },
+              "runAfter": {}
+          },
+          "Response": {
+              "type": "Response",
+              "kind": "http",
+              "inputs": {
+                  "statusCode": 200,
+                  "body": "@body('Create_SB_Payload')"
+              },
+              "runAfter": {
+                  "Create_SB_Payload": [
+                      "Succeeded"
+                  ]
+              }
+          },
+          "Create_SB_Payload": {
+              "type": "Select",
+              "inputs": {
+                  "from": "@actions('Enrich_Message').outputs",
+                  "select": {
+                      "contentData": "@item()['outputs']",
+                      "to": "@appsetting('queuename')"
+                  }
+              },
+              "runAfter": {
+                  "For_each": [
+                      "Succeeded"
+                  ]
+              }
+          }
+      },
+      "triggers": {
+          "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                  "schema": {
+                      "type": "object",
+                      "properties": {
+                          "orders": {
+                              "type": "array",
+                              "items": {
+                                  "type": "object",
+                                  "properties": {
+                                      "order": {
+                                          "type": "string"
+                                      },
+                                      "sku": {
+                                          "type": "string"
+                                      },
+                                      "warehouse": {
+                                          "type": "string"
+                                      }
+                                  },
+                                  "required": [
+                                      "order",
+                                      "sku",
+                                      "warehouse"
+                                  ]
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      },
+      "contentVersion": "1.0.0.0",
+      "outputs": {}
+  },
+  "kind": "Stateless"
+}
