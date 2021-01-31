@@ -1,0 +1,17 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "FUNCTIONS_V2_COMPATIBILITY_MODE": "true",
+    "WORKFLOWS_SUBSCRIPTION_ID": "yoursubscriptionid",
+    "Workflows.EnrichMessages.OperationOptions": "WithStatelessRunHistory",
+    "WORKFLOWS_TENANT_ID": "yourtenantid",
+    "WORKFLOWS_RESOURCE_GROUP_NAME": "integrationdemo",
+    "WORKFLOWS_LOCATION_NAME": "westeurope",
+    "serviceBus-connectionString": "Endpoint=sb://yoursb.servicebus.windows.net/;SharedAccessKeyName=saskey",
+    "queuename" : "outqueue4",
+    "enrichurl" : "enrichurl",
+    "enrichurlkey" : "key_if_using"
+  }
+}
