@@ -76,8 +76,8 @@
                         "inputs": {
                             "parameters": {
                                 "messages": "@body('Enrich')",
-                                "queueName": "outqueue4",
-                                "serviceBusName": "outqueue4"
+                                "queueName": "@appsetting('queuename')",
+                                "serviceBusName": "@appsetting('queuename')"
                             },
                             "serviceProviderConfiguration": {
                                 "connectionName": "serviceBus",
