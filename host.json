@@ -1,5 +1,12 @@
 {
     "version": "2.0",
+    "extensions": {
+        "workflow": {
+            "settings": {
+                "Runtime.FlowRunEngine.NewRunPlatformOptions": "RunDistributionAcrossPartitions, RepetitionsDistributionAcrossSequencers, RunIdTruncationForJobSequencerIdDisabled, RepetitionPreaggregationEnabled"
+            }
+        }
+    },
     "logging": {
         "applicationInsights": {
             "samplingExcludedTypes": "Request",
