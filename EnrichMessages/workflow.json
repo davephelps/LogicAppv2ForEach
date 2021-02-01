@@ -10,10 +10,7 @@
                       "type": "Http",
                       "inputs": {
                           "method": "GET",
-                          "uri": "@{appsetting('enrichurl')}/@{items('For_each')?['warehouse']}",
-                          "headers": {
-                              "Ocp-Apim-Subscription-Key": "@appsetting('enrichurlkey')"
-                          }
+                          "uri": "@{appsetting('enrichurl')}?sku=@{items('For_each')?['sku']}"
                       },
                       "runAfter": {}
                   },
@@ -23,7 +20,7 @@
                           "order": "@items('For_each')?['order']",
                           "sku": "@items('For_each')?['sku']",
                           "warehouse": "@items('For_each')?['warehouse']",
-                          "newVal": "@body('Enrichment_Service')?.lookup"
+                          "newVal": "@body('Enrichment_Service')?.sku"
                       },
                       "runAfter": {
                           "Enrichment_Service": [
