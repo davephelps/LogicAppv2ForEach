@@ -1,0 +1,81 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "HTTP": {
+                "type": "Http",
+                "inputs": {
+                    "method": "GET",
+                    "uri": "@{appsetting('enrichurl')}?sku=@{triggerBody()?['sku']}"
+                },
+                "runAfter": {}
+            },
+            "Compose": {
+                "type": "Compose",
+                "inputs": {
+                    "order": "@triggerBody()['order']",
+                    "sku": "@triggerBody()['sku']",
+                    "warehouse": "@triggerBody()['warehouse']",
+                    "newVal": "@body('HTTP')?.sku"
+                },
+                "runAfter": {
+                    "HTTP": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Send_Message": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "entityName": "@appsetting('queuename')",
+                        "message": {
+                            "contentData": "@outputs('Compose')",
+                            "contentType": "application/json"
+                        }
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "serviceBus",
+                        "operationId": "sendMessage",
+                        "serviceProviderId": "/serviceProviders/serviceBus"
+                    }
+                },
+                "runAfter": {
+                    "Compose": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "order": {
+                                "type": "string"
+                            },
+                            "sku": {
+                                "type": "string"
+                            },
+                            "warehouse": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "order",
+                            "sku",
+                            "warehouse"
+                        ]
+                    }
+                }
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateless"
+}

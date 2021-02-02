@@ -1,0 +1,87 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Parse_JSON": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@json(triggerBody())",
+                    "schema": {
+                        "properties": {
+                            "root": {
+                                "properties": {
+                                    "orders": {
+                                        "items": {
+                                            "properties": {
+                                                "order": {
+                                                    "type": "string"
+                                                },
+                                                "sku": {
+                                                    "type": "string"
+                                                },
+                                                "warehouse": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "order",
+                                                "sku",
+                                                "warehouse"
+                                            ],
+                                            "type": "object"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "required": [
+                                    "orders"
+                                ],
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {}
+            },
+            "For_each": {
+                "type": "Foreach",
+                "foreach": "@body('Parse_JSON')?['root']?['orders']",
+                "actions": {
+                    "Invoke_a_workflow_in_this_workflow_app": {
+                        "type": "Workflow",
+                        "inputs": {
+                            "host": {
+                                "workflow": {
+                                    "id": "EnrichMessage"
+                                }
+                            },
+                            "body": "@items('For_each')"
+                        },
+                        "runAfter": {}
+                    }
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "repetitions": 50
+                    }
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {}
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}
